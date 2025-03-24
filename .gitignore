@@ -20,3 +20,6 @@ build/
 
 # 忽略依赖目录
 node_modules/
+
+# 忽略教程文件
+github_instructions.md
