@@ -11,7 +11,7 @@
 
 ## 安装方法
 
-### 从Chrome网上应用店安装（推荐）
+### 从Chrome网上应用店安装（推荐）（尚未发布）
 
 1. 待发布到Chrome网上应用店后，可以直接在应用店搜索"Copy URL and Title as Markdown"进行安装
 
