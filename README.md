@@ -1,4 +1,4 @@
-# 复制URL和标题为Markdown格式
+# Copy URL and Title as Markdown
 
 这是一个Chrome扩展程序，可以一键将当前网页的标题和URL复制为Markdown格式的链接。
 
@@ -13,7 +13,7 @@
 
 ### 从Chrome网上应用店安装（推荐）
 
-1. 待发布到Chrome网上应用店后，可以直接在应用店搜索"复制URL和标题为Markdown格式"进行安装
+1. 待发布到Chrome网上应用店后，可以直接在应用店搜索"Copy URL and Title as Markdown"进行安装
 
 ### 手动安装（开发模式）
 
@@ -35,12 +35,12 @@
 
 1. 点击Chrome工具栏上的扩展图标
 2. 在弹出窗口中查看Markdown预览
-3. 点击"复制为Markdown"按钮
+3. 点击"Copy as Markdown"按钮
 
 ### 自定义设置
 
-1. 点击扩展图标，然后点击"设置"按钮
-2. 或者右键点击扩展图标，选择"选项"
+1. 点击扩展图标，然后点击"Settings"按钮
+2. 或者右键点击扩展图标，选择"Options"
 3. 在设置页面中，你可以：
    - 自定义Markdown格式（使用 `{title}` 和 `{url}` 作为占位符）
    - 开启或关闭复制成功后的通知提示
@@ -49,7 +49,7 @@
 ## 自定义快捷键
 
 1. 在Chrome地址栏输入 `chrome://extensions/shortcuts`
-2. 找到"复制URL和标题为Markdown格式"扩展
+2. 找到"Copy URL and Title as Markdown"扩展
 3. 点击输入框，然后按下你想要设置的快捷键组合
 
 ## 注意事项
