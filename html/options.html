@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Copy URL and Title as Markdown - Settings</title>
+  <link rel="stylesheet" href="../css/options.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Settings</h1>
+    
+    <div class="option-section">
+      <h2>Markdown Format</h2>
+      <p class="description">Custom Markdown format, use {title} and {url} as placeholders</p>
+      <input type="text" id="format-input" class="text-input" placeholder="e.g: [{title}]({url})">
+      
+      <div class="preview-box">
+        <h3>Preview</h3>
+        <p id="preview-text">Preview will be displayed here</p>
+      </div>
+    </div>
+    
+    <div class="option-section">
+      <h2>Notification Settings</h2>
+      <label class="checkbox-container">
+        <input type="checkbox" id="show-notification-checkbox">
+        <span class="checkmark"></span>
+        Show notification after copying
+      </label>
+    </div>
+    
+    <div class="option-section">
+      <h2>Keyboard Shortcuts</h2>
+      <p>Set keyboard shortcuts in Chrome extension settings:</p>
+      <button id="shortcuts-button" class="secondary-button">Open Keyboard Shortcuts</button>
+    </div>
+    
+    <div class="buttons">
+      <button id="save-button" class="primary-button">Save Settings</button>
+      <button id="reset-button" class="secondary-button">Reset to Default</button>
+    </div>
+    
+    <div id="status" class="status-message"></div>
+  </div>
+  
+  <script src="../js/options.js"></script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "Copy URL and Title as Markdown",
+  "version": "1.0",
+  "description": "Copy current page title and URL as Markdown format",
+  "permissions": ["activeTab", "clipboardWrite", "storage", "scripting"],
+  "action": {
+    "default_popup": "html/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "background": {
+    "service_worker": "js/background.js"
+  },
+  "options_page": "html/options.html",
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+C",
+        "mac": "Command+Shift+C"
+      },
+      "description": "Copy current page title and URL as Markdown format"
+    },
+    "copy_as_markdown": {
+      "suggested_key": {
+        "default": "Alt+Shift+C",
+        "mac": "Alt+Shift+C"
+      },
+      "description": "Copy current page title and URL as Markdown format"
+    }
+  }
+}
