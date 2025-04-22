@@ -3,8 +3,45 @@
 chrome.commands.onCommand.addListener((command) => {
   if (command === 'copy_as_markdown') {
     copyCurrentPageAsMarkdown();
+  } else if (command === 'copy_url_only') {
+    copyCurrentPageUrlOnly();
   }
 });
+
+// Add this new function definition
+async function copyCurrentPageUrlOnly() {
+  try {
+    const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!activeTab) {
+      await showNotification('Unable to get current tab information');
+      return;
+    }
+
+    // Check for Chrome internal pages
+    if (activeTab.url.startsWith('chrome://') || activeTab.url.startsWith('chrome-extension://')) {
+      await showNotification('Unable to copy URL from Chrome internal pages');
+      return;
+    }
+
+    const copySuccess = await copyToClipboard(activeTab.url);
+
+    // Get notification preference
+    const options = await new Promise(resolve => {
+      chrome.storage.sync.get({ showNotification: true }, resolve);
+    });
+
+    if (options.showNotification) {
+      if (copySuccess) {
+        await showNotification('URL Copied!');
+      } else {
+        await showNotification('Copy failed, please try again');
+      }
+    }
+  } catch (err) {
+    console.error('Failed to copy URL:', err);
+    await showNotification('Operation failed, please try again');
+  }
+}
 
 // 复制当前页面为Markdown格式
 async function copyCurrentPageAsMarkdown() {
@@ -14,7 +51,7 @@ async function copyCurrentPageAsMarkdown() {
       await showNotification('Unable to get current tab information');
       return;
     }
-    
+
     // 检查是否是Chrome内部页面
     if (activeTab.url.startsWith('chrome://') || activeTab.url.startsWith('chrome-extension://')) {
       await showNotification('Unable to use this feature in Chrome internal pages');
@@ -28,11 +65,15 @@ async function copyCurrentPageAsMarkdown() {
         showNotification: true
       }, resolve);
     });
-    
+
     // 替换模板中的占位符
-    const markdownText = options.format
+    // 确保生成纯文本格式的Markdown链接
+    let markdownText = options.format
       .replace('{title}', activeTab.title)
       .replace('{url}', activeTab.url);
+
+    // 确保输出的是纯文本，去除可能的格式信息
+    markdownText = markdownText.toString();
 
     // 复制到剪贴板
     const copySuccess = await copyToClipboard(markdownText);
@@ -51,14 +92,17 @@ async function copyCurrentPageAsMarkdown() {
   }
 }
 
+
+
 // 复制文本到剪贴板
 async function copyToClipboard(text) {
   try {
     // 检查navigator.clipboard是否可用
     if (navigator && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-      // 使用navigator.clipboard API复制文本
+      // 使用navigator.clipboard API复制纯文本
+      // 确保使用writeText方法，它只会复制纯文本，不带格式
       await navigator.clipboard.writeText(text);
-      console.log('Successfully copied to clipboard:', text);
+      console.log('Successfully copied to clipboard as plain text:', text);
       return true;
     } else {
       // 如果navigator.clipboard不可用，直接使用内容脚本方法
@@ -67,35 +111,47 @@ async function copyToClipboard(text) {
     }
   } catch (err) {
     console.error('Failed to copy to clipboard:', err);
-    
+
     // 如果navigator.clipboard API失败，尝试在内容脚本中执行复制
     return executeContentScriptCopy(text);
   }
 }
+
+
 
 // 在内容脚本中执行复制操作
 async function executeContentScriptCopy(text) {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab) return false;
-    
+
     // 注入并执行内容脚本
     await chrome.scripting.executeScript({
       target: { tabId: tab.id },
       function: (textToCopy) => {
+        // 创建一个textarea元素用于复制纯文本
         const textarea = document.createElement('textarea');
         textarea.value = textToCopy;
+        // 设置样式使其不可见
         textarea.style.position = 'fixed';
         textarea.style.opacity = '0';
+        textarea.style.pointerEvents = 'none';
+        // 确保不会应用任何样式
+        textarea.setAttribute('readonly', '');
+        textarea.setAttribute('contenteditable', 'true');
+        // 添加到DOM
         document.body.appendChild(textarea);
+        // 选择文本并复制
         textarea.select();
         const success = document.execCommand('copy');
+        // 移除元素
         document.body.removeChild(textarea);
         return success;
       },
       args: [text]
     });
-    
+
+    console.log('Successfully copied to clipboard as plain text using content script');
     return true;
   } catch (err) {
     console.error('Failed to copy in content script:', err);
@@ -103,17 +159,19 @@ async function executeContentScriptCopy(text) {
   }
 }
 
+
+
 // 显示通知
 async function showNotification(message) {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab) return;
-    
+
     try {
       // 尝试发送消息给内容脚本
-      await chrome.tabs.sendMessage(tab.id, { 
-        action: 'showNotification', 
-        message: message 
+      await chrome.tabs.sendMessage(tab.id, {
+        action: 'showNotification',
+        message: message
       });
     } catch (error) {
       // If content script is not loaded, inject it
@@ -122,21 +180,25 @@ async function showNotification(message) {
         target: { tabId: tab.id },
         files: ['js/content.js']
       });
-      
-      // 等待内容脚本加载完成
-      setTimeout(async () => {
-        try {
-          await chrome.tabs.sendMessage(tab.id, { 
-            action: 'showNotification', 
-            message: message 
-          });
-        } catch (err) {
+
+      // Give the content script a moment to load before sending the message
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      try {
+        await chrome.tabs.sendMessage(tab.id, {
+          action: 'showNotification',
+          message: message
+        });
+      } catch (err) {
           console.error('Failed to send notification message:', err);
-          
+
           // If still fails, display notification directly on the page
           await chrome.scripting.executeScript({
             target: { tabId: tab.id },
             function: (msg) => {
+              // Prevent creating multiple notifications
+              if (document.getElementById('md-copy-notification')) return;
+
               const notificationStyle = `
                 position: fixed;
                 top: 20px;
@@ -151,19 +213,19 @@ async function showNotification(message) {
                 font-size: 14px;
                 transition: opacity 0.3s ease-in-out;
               `;
-              
+
               const notification = document.createElement('div');
               notification.id = 'md-copy-notification';
               notification.style.cssText = notificationStyle;
               notification.textContent = msg;
               notification.style.opacity = '0';
-              
+
               document.body.appendChild(notification);
-              
+
               setTimeout(() => {
                 notification.style.opacity = '1';
               }, 10);
-              
+
               setTimeout(() => {
                 notification.style.opacity = '0';
                 setTimeout(() => {
@@ -176,12 +238,13 @@ async function showNotification(message) {
             args: [message]
           });
         }
-      }, 100);
     }
   } catch (err) {
     console.error('Failed to display notification:', err);
   }
 }
+
+
 
 // 监听来自popup的消息
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {

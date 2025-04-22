@@ -22,19 +22,19 @@
   },
   "options_page": "html/options.html",
   "commands": {
-    "_execute_action": {
+    "copy_as_markdown": {
       "suggested_key": {
-        "default": "Ctrl+Shift+C",
-        "mac": "Command+Shift+C"
+        "default": "Alt+Shift+C", 
+        "mac": "Alt+Shift+C" 
       },
       "description": "Copy current page title and URL as Markdown format"
     },
-    "copy_as_markdown": {
+    "copy_url_only": {
       "suggested_key": {
-        "default": "Alt+Shift+C",
-        "mac": "Alt+Shift+C"
+        "default": "Alt+Shift+U",
+        "mac": "Alt+Shift+U"
       },
-      "description": "Copy current page title and URL as Markdown format"
+      "description": "Copy current page URL only"
     }
   }
 }

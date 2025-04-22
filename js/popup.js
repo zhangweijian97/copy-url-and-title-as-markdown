@@ -34,12 +34,27 @@ document.addEventListener('DOMContentLoaded', () => {
       format: '[{title}]({url})'
     }, (options) => {
       // 替换模板中的占位符
-      const markdownText = options.format
+      let markdownText = options.format
         .replace('{title}', activeTab.title)
         .replace('{url}', activeTab.url);
       
-      // 更新预览
+      // 确保预览显示的是纯文本格式
+      markdownText = markdownText.toString();
+      
+      // 更新预览 - 使用textContent确保显示为纯文本
       previewText.textContent = markdownText;
+      
+      // 添加提示说明这是纯文本格式
+      const previewBox = document.getElementById('preview-box');
+      if (previewBox && !document.getElementById('plain-text-note')) {
+        const note = document.createElement('p');
+        note.id = 'plain-text-note';
+        note.style.fontSize = '12px';
+        note.style.color = '#666';
+        note.style.marginTop = '5px';
+        note.textContent = '纯文本格式的Markdown链接';
+        previewBox.appendChild(note);
+      }
     });
   });
   
