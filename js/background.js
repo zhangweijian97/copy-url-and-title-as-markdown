@@ -1,11 +1,34 @@
 // background.js
+// 确保 service worker 保持活跃状态
+const KEEP_ALIVE_INTERVAL = 20 * 60 * 1000; // 20分钟
+
+// 定期发送消息以保持 service worker 活跃
+function keepAlive() {
+  console.log('Service worker keep-alive ping at', new Date().toISOString());
+  setTimeout(keepAlive, KEEP_ALIVE_INTERVAL);
+}
+
+// 在 service worker 启动时启动保活机制
+keepAlive();
+
 // 处理快捷键命令
 chrome.commands.onCommand.addListener((command) => {
+  console.log('Command received:', command);
   if (command === 'copy_as_markdown') {
     copyCurrentPageAsMarkdown();
   } else if (command === 'copy_url_only') {
     copyCurrentPageUrlOnly();
   }
+});
+
+// 确保在 service worker 激活时重新注册命令监听器
+chrome.runtime.onStartup.addListener(() => {
+  console.log('Extension started up at', new Date().toISOString());
+});
+
+// 监听 service worker 安装事件
+chrome.runtime.onInstalled.addListener(() => {
+  console.log('Service worker installed/updated at', new Date().toISOString());
 });
 
 // Add this new function definition
