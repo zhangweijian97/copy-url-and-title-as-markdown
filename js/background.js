@@ -1,15 +1,8 @@
 // background.js
-// 确保 service worker 保持活跃状态
-const KEEP_ALIVE_INTERVAL = 20 * 60 * 1000; // 20分钟
-
-// 定期发送消息以保持 service worker 活跃
-function keepAlive() {
-  console.log('Service worker keep-alive ping at', new Date().toISOString());
-  setTimeout(keepAlive, KEEP_ALIVE_INTERVAL);
-}
-
-// 在 service worker 启动时启动保活机制
-keepAlive();
+// 点击扩展图标时直接复制为 Markdown 格式
+chrome.action.onClicked.addListener(() => {
+  copyCurrentPageAsMarkdown();
+});
 
 // 处理快捷键命令
 chrome.commands.onCommand.addListener((command) => {

@@ -5,7 +5,7 @@
   "description": "Copy current page title and URL as Markdown format",
   "permissions": ["activeTab", "clipboardWrite", "storage", "scripting"],
   "action": {
-    "default_popup": "html/popup.html",
+
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
