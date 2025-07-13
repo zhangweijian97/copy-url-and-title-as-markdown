@@ -1,4 +1,15 @@
 // background.js
+// 性能优化：移除开发日志，减少内存占用
+const DEBUG = false; // 生产环境设为 false
+
+function log(...args) {
+  if (DEBUG) console.log(...args);
+}
+
+function error(...args) {
+  if (DEBUG) console.error(...args);
+}
+
 // 点击扩展图标时直接复制为 Markdown 格式
 chrome.action.onClicked.addListener(() => {
   copyCurrentPageAsMarkdown();
@@ -6,7 +17,7 @@ chrome.action.onClicked.addListener(() => {
 
 // 处理快捷键命令
 chrome.commands.onCommand.addListener((command) => {
-  console.log('Command received:', command);
+  log('Command received:', command);
   if (command === 'copy_as_markdown') {
     copyCurrentPageAsMarkdown();
   } else if (command === 'copy_url_only') {
@@ -16,12 +27,12 @@ chrome.commands.onCommand.addListener((command) => {
 
 // 确保在 service worker 激活时重新注册命令监听器
 chrome.runtime.onStartup.addListener(() => {
-  console.log('Extension started up at', new Date().toISOString());
+  log('Extension started up');
 });
 
 // 监听 service worker 安装事件
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('Service worker installed/updated at', new Date().toISOString());
+  log('Service worker installed/updated');
 });
 
 // Add this new function definition
@@ -110,153 +121,142 @@ async function copyCurrentPageAsMarkdown() {
 
 
 
-// 复制文本到剪贴板
+// 复制文本到剪贴板 - 性能优化版本
 async function copyToClipboard(text) {
   try {
-    // 检查navigator.clipboard是否可用
-    if (navigator && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-      // 使用navigator.clipboard API复制纯文本
-      // 确保使用writeText方法，它只会复制纯文本，不带格式
+    // 优先使用现代剪贴板 API
+    if (navigator?.clipboard?.writeText) {
       await navigator.clipboard.writeText(text);
-      console.log('Successfully copied to clipboard as plain text:', text);
+      log('Copied via clipboard API');
       return true;
-    } else {
-      // 如果navigator.clipboard不可用，直接使用内容脚本方法
-      console.log('navigator.clipboard not available, using fallback method');
-      return executeContentScriptCopy(text);
     }
+    
+    // 回退到内容脚本方法
+    log('Using content script fallback');
+    return await executeContentScriptCopy(text);
   } catch (err) {
-    console.error('Failed to copy to clipboard:', err);
-
-    // 如果navigator.clipboard API失败，尝试在内容脚本中执行复制
-    return executeContentScriptCopy(text);
+    error('Clipboard operation failed:', err);
+    return await executeContentScriptCopy(text);
   }
 }
 
 
 
-// 在内容脚本中执行复制操作
+// 在内容脚本中执行复制操作 - 性能优化版本
 async function executeContentScriptCopy(text) {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab) return false;
 
-    // 注入并执行内容脚本
-    await chrome.scripting.executeScript({
+    // 重用已注入的内容脚本，避免重复注入
+    try {
+      // 先尝试直接调用已存在的内容脚本
+      const result = await chrome.tabs.sendMessage(tab.id, {
+        action: 'copyToClipboard',
+        text: text
+      });
+      if (result?.success) return true;
+    } catch (e) {
+      // 内容脚本未加载，继续注入
+    }
+
+    // 注入并执行复制操作
+    const results = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
-      function: (textToCopy) => {
-        // 创建一个textarea元素用于复制纯文本
-        const textarea = document.createElement('textarea');
-        textarea.value = textToCopy;
-        // 设置样式使其不可见
-        textarea.style.position = 'fixed';
-        textarea.style.opacity = '0';
-        textarea.style.pointerEvents = 'none';
-        // 确保不会应用任何样式
-        textarea.setAttribute('readonly', '');
-        textarea.setAttribute('contenteditable', 'true');
-        // 添加到DOM
-        document.body.appendChild(textarea);
-        // 选择文本并复制
-        textarea.select();
-        const success = document.execCommand('copy');
-        // 移除元素
-        document.body.removeChild(textarea);
-        return success;
+      func: (textToCopy) => {
+        // 使用更高效的一次性复制函数
+        const copyText = (text) => {
+          const textarea = document.createElement('textarea');
+          textarea.value = text;
+          textarea.style.cssText = 'position:fixed;opacity:0;pointer-events:none;left:-9999px';
+          document.body.appendChild(textarea);
+          textarea.select();
+          const success = document.execCommand('copy');
+          document.body.removeChild(textarea);
+          return success;
+        };
+        
+        const success = copyText(textToCopy);
+        return { success };
       },
       args: [text]
     });
 
-    console.log('Successfully copied to clipboard as plain text using content script');
-    return true;
+    return results?.[0]?.result?.success || false;
   } catch (err) {
-    console.error('Failed to copy in content script:', err);
+    error('Content script copy failed:', err);
     return false;
   }
 }
 
 
 
-// 显示通知
+// 显示通知 - 性能优化版本
 async function showNotification(message) {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab) return;
 
+    // 使用更高效的通知系统
     try {
-      // 尝试发送消息给内容脚本
-      await chrome.tabs.sendMessage(tab.id, {
-        action: 'showNotification',
-        message: message
-      });
-    } catch (error) {
-      // If content script is not loaded, inject it
-      console.log('Injecting content script...');
+      // 直接注入通知代码，避免消息传递开销
       await chrome.scripting.executeScript({
         target: { tabId: tab.id },
-        files: ['js/content.js']
-      });
+        func: (msg) => {
+          // 清理已存在的通知
+          const existing = document.getElementById('md-copy-notification');
+          if (existing) {
+            existing.remove();
+          }
 
-      // Give the content script a moment to load before sending the message
-      await new Promise(resolve => setTimeout(resolve, 100));
+          // 使用 CSS 动画代替 JavaScript setTimeout
+          const style = document.createElement('style');
+          style.textContent = `
+            @keyframes fadeInOut {
+              0% { opacity: 0; transform: translateY(-20px); }
+              10% { opacity: 1; transform: translateY(0); }
+              90% { opacity: 1; transform: translateY(0); }
+              100% { opacity: 0; transform: translateY(-20px); }
+            }
+            .md-notification {
+              position: fixed;
+              top: 20px;
+              right: 20px;
+              background: #4CAF50;
+              color: white;
+              padding: 12px 16px;
+              border-radius: 4px;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+              z-index: 9999;
+              font-family: system-ui, sans-serif;
+              font-size: 14px;
+              animation: fadeInOut 3s ease-in-out forwards;
+              pointer-events: none;
+            }
+          `;
+          
+          if (!document.getElementById('md-notification-style')) {
+            style.id = 'md-notification-style';
+            document.head.appendChild(style);
+          }
 
-      try {
-        await chrome.tabs.sendMessage(tab.id, {
-          action: 'showNotification',
-          message: message
-        });
-      } catch (err) {
-          console.error('Failed to send notification message:', err);
+          const notification = document.createElement('div');
+          notification.className = 'md-notification';
+          notification.textContent = msg;
+          document.body.appendChild(notification);
 
-          // If still fails, display notification directly on the page
-          await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            function: (msg) => {
-              // Prevent creating multiple notifications
-              if (document.getElementById('md-copy-notification')) return;
-
-              const notificationStyle = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background-color: #4CAF50;
-                color: white;
-                padding: 16px;
-                border-radius: 4px;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-                z-index: 9999;
-                font-family: Arial, sans-serif;
-                font-size: 14px;
-                transition: opacity 0.3s ease-in-out;
-              `;
-
-              const notification = document.createElement('div');
-              notification.id = 'md-copy-notification';
-              notification.style.cssText = notificationStyle;
-              notification.textContent = msg;
-              notification.style.opacity = '0';
-
-              document.body.appendChild(notification);
-
-              setTimeout(() => {
-                notification.style.opacity = '1';
-              }, 10);
-
-              setTimeout(() => {
-                notification.style.opacity = '0';
-                setTimeout(() => {
-                  if (notification.parentNode) {
-                    document.body.removeChild(notification);
-                  }
-                }, 300);
-              }, 3000);
-            },
-            args: [message]
+          // 动画结束后自动清理
+          notification.addEventListener('animationend', () => {
+            notification.remove();
           });
-        }
+        },
+        args: [message]
+      });
+    } catch (err) {
+      error('Notification failed:', err);
     }
   } catch (err) {
-    console.error('Failed to display notification:', err);
+    error('Failed to display notification:', err);
   }
 }
 
