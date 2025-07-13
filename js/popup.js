@@ -1,12 +1,25 @@
 // popup.js
 // 处理弹出窗口的交互逻辑
 
+// i18n工具函数
+function getMessage(key, substitutions = []) {
+  try {
+    return chrome.i18n.getMessage(key, substitutions) || key;
+  } catch (err) {
+    return key;
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   // 获取DOM元素
   const copyButton = document.getElementById('copy-button');
   const optionsButton = document.getElementById('options-button');
   const previewText = document.getElementById('preview-text');
   const shortcutText = document.getElementById('shortcut-text');
+  
+  // 设置按钮文本
+  copyButton.textContent = getMessage('copyAsMarkdown');
+  optionsButton.textContent = getMessage('settings');
   
   // 获取当前操作系统类型，用于显示正确的快捷键
   const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
@@ -16,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 获取当前标签页信息并更新预览
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (tabs.length === 0) {
-      previewText.textContent = 'Unable to get current tab information';
+      previewText.textContent = getMessage('invalidTab');
       return;
     }
 
@@ -24,14 +37,14 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 检查是否是Chrome内部页面
     if (activeTab.url.startsWith('chrome://') || activeTab.url.startsWith('chrome-extension://')) {
-      previewText.textContent = 'Unable to use this feature in Chrome internal pages';
+      previewText.textContent = getMessage('internalPage');
       copyButton.disabled = true;
       return;
     }
 
     // 获取自定义格式设置
     chrome.storage.sync.get({
-      format: '[{title}]({url})'
+      format: getMessage('formatPlaceholder') || '[{title}]({url})'
     }, (options) => {
       // 替换模板中的占位符
       let markdownText = options.format
@@ -58,27 +71,39 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
   
-  // 复制按钮点击事件
+  // 复制按钮点击事件 - 增强用户体验
   copyButton.addEventListener('click', () => {
     // 显示加载状态
-    copyButton.textContent = 'Copying...';
+    const originalText = copyButton.textContent;
+    copyButton.innerHTML = `<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span>`;
     copyButton.disabled = true;
+    copyButton.classList.add('loading');
     
     chrome.runtime.sendMessage({ action: 'copyAsMarkdown' }, (response) => {
+      copyButton.classList.remove('loading');
+      
       if (response && response.success) {
-        // 显示复制成功的视觉反馈
-        copyButton.textContent = 'Copied!';
+        // 成功动画
+        copyButton.textContent = '✓ ' + getMessage('copySuccess');
+        copyButton.classList.add('success');
+        
+        // 自动关闭popup
+        setTimeout(() => {
+          window.close();
+        }, 800);
       } else {
-        // 显示错误反馈
-        copyButton.textContent = 'Copy failed!';
-        console.error('Copy failed:', response ? response.error : 'Unknown error');
+        // 错误动画
+        copyButton.textContent = '✗ ' + getMessage('copyFailed');
+        copyButton.classList.add('error');
+        
+        // 恢复按钮
+        setTimeout(() => {
+          copyButton.textContent = originalText;
+          copyButton.classList.remove('error');
+        }, 2000);
       }
       
-      // 恢复按钮状态
       copyButton.disabled = false;
-      setTimeout(() => {
-        copyButton.textContent = 'Copy as Markdown';
-      }, 1500);
     });
   });
   

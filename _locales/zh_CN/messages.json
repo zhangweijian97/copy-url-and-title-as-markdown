@@ -1,0 +1,70 @@
+{
+  "extensionName": {
+    "message": "复制网页为Markdown链接",
+    "description": "扩展名称"
+  },
+  "extensionDescription": {
+    "message": "一键将当前网页标题和URL复制为Markdown格式链接",
+    "description": "扩展描述"
+  },
+  "copySuccess": {
+    "message": "已复制为Markdown格式！",
+    "description": "复制成功时的消息"
+  },
+  "copyFailed": {
+    "message": "复制失败，请重试",
+    "description": "复制失败时的错误消息"
+  },
+  "urlCopied": {
+    "message": "URL已复制！",
+    "description": "仅复制URL成功时的消息"
+  },
+  "invalidTab": {
+    "message": "无法获取当前标签页信息",
+    "description": "无法获取标签页信息时的错误"
+  },
+  "internalPage": {
+    "message": "无法在Chrome内部页面使用此功能",
+    "description": "内部页面错误消息"
+  },
+  "settingsSaved": {
+    "message": "设置已保存！",
+    "description": "选项页面保存成功的消息"
+  },
+  "settingsSaveFailed": {
+    "message": "保存失败，请重试",
+    "description": "选项页面保存失败的消息"
+  },
+  "formatPlaceholder": {
+    "message": "[{title}]({url})",
+    "description": "默认格式模板"
+  },
+  "previewTitle": {
+    "message": "示例网页标题",
+    "description": "预览用的示例标题"
+  },
+  "previewUrl": {
+    "message": "https://example.com",
+    "description": "预览用的示例URL"
+  },
+  "formatInvalid": {
+    "message": "格式必须包含 {title} 和 {url} 占位符",
+    "description": "格式验证错误"
+  },
+  "copyAsMarkdown": {
+    "message": "复制为Markdown",
+    "description": "弹出窗口按钮文本"
+  },
+  "settings": {
+    "message": "设置",
+    "description": "设置按钮文本"
+  },
+  "shortcuts": {
+    "message": "键盘快捷键",
+    "description": "快捷键按钮文本"
+  },
+  "copyUrlOnlyDescription": {
+    "message": "仅复制当前页面URL",
+    "description": "仅复制URL命令的描述"
+  }
+}

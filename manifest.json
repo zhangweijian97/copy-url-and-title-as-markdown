@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Copy URL and Title as Markdown",
-  "version": "1.0",
-  "description": "Copy current page title and URL as Markdown format",
+  "name": "__MSG_extensionName__",
+  "version": "1.1",
+  "description": "__MSG_extensionDescription__",
+  "default_locale": "en",
   "permissions": ["activeTab", "clipboardWrite", "storage", "scripting"],
   "action": {
 
@@ -27,14 +28,14 @@
         "default": "Alt+Shift+C", 
         "mac": "Alt+Shift+C" 
       },
-      "description": "Copy current page title and URL as Markdown format"
+      "description": "__MSG_extensionDescription__"
     },
     "copy_url_only": {
       "suggested_key": {
         "default": "Alt+Shift+U",
         "mac": "Alt+Shift+U"
       },
-      "description": "Copy current page URL only"
+      "description": "__MSG_copyUrlOnlyDescription__"
     }
   }
 }

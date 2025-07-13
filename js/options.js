@@ -13,9 +13,18 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // 默认设置
   const defaultSettings = {
-    format: '[{title}]({url})',
+    format: chrome.i18n.getMessage('formatPlaceholder') || '[{title}]({url})',
     showNotification: true
   };
+
+  // i18n工具函数
+  function getMessage(key, substitutions = []) {
+    try {
+      return chrome.i18n.getMessage(key, substitutions) || key;
+    } catch (err) {
+      return key;
+    }
+  }
   
   // 加载保存的设置
   loadSettings();
@@ -63,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // 验证格式模板
       if (!validateFormat(format)) {
-        alert('格式必须包含 {title} 和 {url} 占位符');
+        alert(getMessage('formatInvalid'));
         return;
       }
       
@@ -78,10 +87,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }, () => {
         if (chrome.runtime.lastError) {
           console.error('保存设置失败:', chrome.runtime.lastError);
-          statusMessage.textContent = '保存失败，请重试';
+          statusMessage.textContent = getMessage('settingsSaveFailed');
           statusMessage.classList.add('error');
         } else {
-          statusMessage.textContent = '设置已保存！';
+          statusMessage.textContent = getMessage('settingsSaved');
           statusMessage.classList.add('success');
         }
         
@@ -122,8 +131,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function updatePreview() {
     try {
       let format = formatInput.value.trim() || defaultSettings.format;
-      const sampleTitle = '示例网页标题';
-      const sampleUrl = 'https://example.com';
+      const sampleTitle = getMessage('previewTitle');
+      const sampleUrl = getMessage('previewUrl');
       
       // 验证和清理格式
       if (!validateFormat(format)) {

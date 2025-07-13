@@ -1,0 +1,70 @@
+{
+  "extensionName": {
+    "message": "Copy URL and Title as Markdown",
+    "description": "Extension name"
+  },
+  "extensionDescription": {
+    "message": "Copy current page title and URL as Markdown format",
+    "description": "Extension description"
+  },
+  "copySuccess": {
+    "message": "Copied as Markdown format!",
+    "description": "Success message when copying markdown"
+  },
+  "copyFailed": {
+    "message": "Copy failed, please try again",
+    "description": "Error message when copy fails"
+  },
+  "urlCopied": {
+    "message": "URL Copied!",
+    "description": "Success message when copying URL only"
+  },
+  "invalidTab": {
+    "message": "Unable to get current tab information",
+    "description": "Error when tab info is unavailable"
+  },
+  "internalPage": {
+    "message": "Unable to use this feature in Chrome internal pages",
+    "description": "Error message for internal pages"
+  },
+  "settingsSaved": {
+    "message": "Settings saved!",
+    "description": "Success message in options page"
+  },
+  "settingsSaveFailed": {
+    "message": "Save failed, please retry",
+    "description": "Error message in options page"
+  },
+  "formatPlaceholder": {
+    "message": "[{title}]({url})",
+    "description": "Default format template"
+  },
+  "previewTitle": {
+    "message": "Example Web Page Title",
+    "description": "Sample title for preview"
+  },
+  "previewUrl": {
+    "message": "https://example.com",
+    "description": "Sample URL for preview"
+  },
+  "formatInvalid": {
+    "message": "Format must include {title} and {url} placeholders",
+    "description": "Validation error for format"
+  },
+  "copyAsMarkdown": {
+    "message": "Copy as Markdown",
+    "description": "Button text in popup"
+  },
+  "settings": {
+    "message": "Settings",
+    "description": "Settings button text"
+  },
+  "shortcuts": {
+    "message": "Keyboard Shortcuts",
+    "description": "Shortcuts button text"
+  },
+  "copyUrlOnlyDescription": {
+    "message": "Copy current page URL only",
+    "description": "Description for URL only copy command"
+  }
+}

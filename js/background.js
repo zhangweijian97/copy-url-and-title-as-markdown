@@ -2,6 +2,15 @@
 // 性能优化：移除开发日志，减少内存占用
 const DEBUG = false; // 生产环境设为 false
 
+// i18n工具函数
+function getMessage(key, substitutions = []) {
+  try {
+    return chrome.i18n.getMessage(key, substitutions) || key;
+  } catch (err) {
+    return key;
+  }
+}
+
 function log(...args) {
   if (DEBUG) console.log(...args);
 }
@@ -40,19 +49,19 @@ async function copyCurrentPageUrlOnly() {
   try {
     const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!activeTab) {
-      await showNotification('无法获取当前标签页信息');
+      await showNotification(getMessage('invalidTab'));
       return;
     }
 
     // 验证标签页信息
     if (!activeTab.url) {
-      await showNotification('无法获取当前页面URL');
+      await showNotification(getMessage('invalidTab'));
       return;
     }
 
     // 检查是否为内部页面
     if (isInternalPage(activeTab.url)) {
-      await showNotification('无法在Chrome内部页面复制URL');
+      await showNotification(getMessage('internalPage'));
       return;
     }
 
@@ -63,11 +72,11 @@ async function copyCurrentPageUrlOnly() {
     const options = await getStorageOptions();
 
     if (options.showNotification) {
-      await showNotification(copySuccess ? 'URL已复制！' : '复制失败，请重试');
+      await showNotification(getMessage(copySuccess ? 'urlCopied' : 'copyFailed'));
     }
   } catch (err) {
     error('复制URL失败:', err);
-    await showNotification('操作失败，请刷新页面后重试');
+    await showNotification(getMessage('copyFailed'))
   }
 }
 
@@ -76,19 +85,19 @@ async function copyCurrentPageAsMarkdown() {
   try {
     const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!activeTab) {
-      await showNotification('无法获取当前标签页信息');
+      await showNotification(getMessage('invalidTab'));
       return;
     }
 
     // 验证标签页信息
     if (!activeTab.url || !activeTab.title) {
-      await showNotification('标签页信息不完整');
+      await showNotification(getMessage('invalidTab'));
       return;
     }
 
     // 检查是否是Chrome内部页面或无效URL
     if (isInternalPage(activeTab.url)) {
-      await showNotification('无法在Chrome内部页面使用此功能');
+      await showNotification(getMessage('internalPage'));
       return;
     }
 
@@ -117,11 +126,11 @@ async function copyCurrentPageAsMarkdown() {
 
     // 显示通知
     if (options.showNotification) {
-      await showNotification(copySuccess ? '已复制为Markdown格式！' : '复制失败，请重试');
+      await showNotification(getMessage(copySuccess ? 'copySuccess' : 'copyFailed'));
     }
   } catch (err) {
     error('复制Markdown格式失败:', err);
-    await showNotification('操作失败，请刷新页面后重试');
+    await showNotification(getMessage('copyFailed'));
   }
 }
 
