@@ -40,86 +40,154 @@ async function copyCurrentPageUrlOnly() {
   try {
     const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!activeTab) {
-      await showNotification('Unable to get current tab information');
+      await showNotification('无法获取当前标签页信息');
       return;
     }
 
-    // Check for Chrome internal pages
-    if (activeTab.url.startsWith('chrome://') || activeTab.url.startsWith('chrome-extension://')) {
-      await showNotification('Unable to copy URL from Chrome internal pages');
+    // 验证标签页信息
+    if (!activeTab.url) {
+      await showNotification('无法获取当前页面URL');
       return;
     }
 
-    const copySuccess = await copyToClipboard(activeTab.url);
+    // 检查是否为内部页面
+    if (isInternalPage(activeTab.url)) {
+      await showNotification('无法在Chrome内部页面复制URL');
+      return;
+    }
 
-    // Get notification preference
-    const options = await new Promise(resolve => {
-      chrome.storage.sync.get({ showNotification: true }, resolve);
-    });
+    const safeUrl = sanitizeUrl(activeTab.url);
+    const copySuccess = await copyToClipboard(safeUrl);
+
+    // 安全获取通知设置
+    const options = await getStorageOptions();
 
     if (options.showNotification) {
-      if (copySuccess) {
-        await showNotification('URL Copied!');
-      } else {
-        await showNotification('Copy failed, please try again');
-      }
+      await showNotification(copySuccess ? 'URL已复制！' : '复制失败，请重试');
     }
   } catch (err) {
-    console.error('Failed to copy URL:', err);
-    await showNotification('Operation failed, please try again');
+    error('复制URL失败:', err);
+    await showNotification('操作失败，请刷新页面后重试');
   }
 }
 
-// 复制当前页面为Markdown格式
+// 复制当前页面为Markdown格式 - 增强错误处理版本
 async function copyCurrentPageAsMarkdown() {
   try {
     const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!activeTab) {
-      await showNotification('Unable to get current tab information');
+      await showNotification('无法获取当前标签页信息');
       return;
     }
 
-    // 检查是否是Chrome内部页面
-    if (activeTab.url.startsWith('chrome://') || activeTab.url.startsWith('chrome-extension://')) {
-      await showNotification('Unable to use this feature in Chrome internal pages');
+    // 验证标签页信息
+    if (!activeTab.url || !activeTab.title) {
+      await showNotification('标签页信息不完整');
       return;
     }
 
-    // 获取自定义格式设置
-    const options = await new Promise(resolve => {
-      chrome.storage.sync.get({
-        format: '[{title}]({url})',
-        showNotification: true
-      }, resolve);
-    });
+    // 检查是否是Chrome内部页面或无效URL
+    if (isInternalPage(activeTab.url)) {
+      await showNotification('无法在Chrome内部页面使用此功能');
+      return;
+    }
+
+    // 安全地获取自定义格式设置，带错误处理
+    const options = await getStorageOptions();
+    
+    // 安全地处理标题和URL，防止XSS和格式错误
+    const safeTitle = sanitizeText(activeTab.title);
+    const safeUrl = sanitizeUrl(activeTab.url);
+    
+    // 验证格式模板
+    if (!isValidFormat(options.format)) {
+      options.format = '[{title}]({url})'; // 使用默认格式
+    }
 
     // 替换模板中的占位符
-    // 确保生成纯文本格式的Markdown链接
     let markdownText = options.format
-      .replace('{title}', activeTab.title)
-      .replace('{url}', activeTab.url);
+      .replace(/{title}/g, safeTitle)
+      .replace(/{url}/g, safeUrl);
 
-    // 确保输出的是纯文本，去除可能的格式信息
-    markdownText = markdownText.toString();
+    // 确保输出的是纯文本，限制长度防止内存问题
+    markdownText = markdownText.toString().slice(0, 10000);
 
     // 复制到剪贴板
     const copySuccess = await copyToClipboard(markdownText);
 
     // 显示通知
     if (options.showNotification) {
-      if (copySuccess) {
-        await showNotification('Copied as Markdown format!');
-      } else {
-        await showNotification('Copy failed, please try again');
-      }
+      await showNotification(copySuccess ? '已复制为Markdown格式！' : '复制失败，请重试');
     }
   } catch (err) {
-    console.error('Failed to copy Markdown format:', err);
-    await showNotification('Operation failed, please try again');
+    error('复制Markdown格式失败:', err);
+    await showNotification('操作失败，请刷新页面后重试');
   }
 }
 
 
+
+// 工具函数：检查是否为Chrome内部页面
+function isInternalPage(url) {
+  if (!url || typeof url !== 'string') return true;
+  return url.startsWith('chrome://') || 
+         url.startsWith('chrome-extension://') || 
+         url.startsWith('edge://') ||
+         url.startsWith('about:') ||
+         !url.startsWith('http');
+}
+
+// 工具函数：清理文本，防止XSS
+function sanitizeText(text) {
+  if (!text || typeof text !== 'string') return 'Untitled';
+  return text.toString()
+    .replace(/[<>]/g, '') // 移除潜在危险的HTML标签
+    .replace(/\s+/g, ' ') // 规范化空白字符
+    .trim()
+    .slice(0, 500); // 限制长度
+}
+
+// 工具函数：验证和清理URL
+function sanitizeUrl(url) {
+  if (!url || typeof url !== 'string') return 'about:blank';
+  
+  try {
+    const urlObj = new URL(url);
+    return urlObj.toString();
+  } catch {
+    return 'about:blank';
+  }
+}
+
+// 工具函数：验证格式模板
+function isValidFormat(format) {
+  if (!format || typeof format !== 'string') return false;
+  return format.includes('{title}') && format.includes('{url}');
+}
+
+// 工具函数：安全获取存储选项，带错误处理
+async function getStorageOptions() {
+  const defaultOptions = {
+    format: '[{title}]({url})',
+    showNotification: true
+  };
+  
+  try {
+    // 使用 Promise 包装 chrome.storage API
+    return await new Promise((resolve, reject) => {
+      chrome.storage.sync.get(defaultOptions, (items) => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve(items);
+        }
+      });
+    });
+  } catch (err) {
+    error('获取存储选项失败:', err);
+    return defaultOptions; // 使用默认选项
+  }
+}
 
 // 复制文本到剪贴板 - 性能优化版本
 async function copyToClipboard(text) {
