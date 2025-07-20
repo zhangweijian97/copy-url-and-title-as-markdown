@@ -1,5 +1,7 @@
 # Copy URL and Title as Markdown
 
+[![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-Available-green)](https://chromewebstore.google.com/detail/hgcnlmeldjplppaaifjmdemcdkihamoe?utm_source=item-share-cb)
+
 这是一个Chrome扩展程序，可以一键将当前网页的标题和URL复制为Markdown格式的链接。
 
 ## 功能特点
@@ -15,9 +17,11 @@
 
 ## 安装方法
 
-### 从Chrome网上应用店安装（推荐）（尚未发布）
+### 从Chrome网上应用店安装（推荐）
 
-1. 待发布到Chrome网上应用店后，可以直接在应用店搜索"Copy URL and Title as Markdown"进行安装
+1. 访问 [Chrome Web Store](https://chromewebstore.google.com/detail/hgcnlmeldjplppaaifjmdemcdkihamoe?utm_source=item-share-cb)
+2. 点击"添加至Chrome"按钮进行安装
+3. 或者直接在Chrome网上应用店搜索"Copy URL and Title as Markdown"进行安装
 
 ### 手动安装（开发模式）
 
@@ -72,3 +76,7 @@
 ## 开发者信息
 
 如有任何问题或建议，请联系开发者。
+
+## 快速安装
+
+[![安装到Chrome](https://storage.googleapis.com/web-dev-uploads/image/WlD8wC6g8khYWPJUsQceQkhXSlv1/UV4C4ybeBTsZt43U4xis.png)](https://chromewebstore.google.com/detail/hgcnlmeldjplppaaifjmdemcdkihamoe?utm_source=item-share-cb)
