@@ -1,10 +1,11 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extensionName__",
-  "version": "1.1",
+  "version": "1.3",
   "description": "__MSG_extensionDescription__",
   "default_locale": "en",
   "permissions": ["activeTab", "clipboardWrite", "storage", "scripting"],
+  "host_permissions": ["<all_urls>"],
   "action": {
 
     "default_icon": {
@@ -21,6 +22,13 @@
   "background": {
     "service_worker": "js/background.js"
   },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["js/content.js"],
+      "run_at": "document_end"
+    }
+  ],
   "options_page": "html/options.html",
   "commands": {
     "copy_as_markdown": {
